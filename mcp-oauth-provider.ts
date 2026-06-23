@@ -60,6 +60,7 @@ export interface McpOAuthConfig {
   clientId?: string
   clientSecret?: string
   scope?: string
+  resource?: string
   callbackPort?: number
 }
 
@@ -104,6 +105,7 @@ export class McpOAuthProvider implements OAuthClientProvider {
         redirect_uris: [],
         grant_types: ["client_credentials"],
         token_endpoint_auth_method: this.config.clientSecret ? "client_secret_post" : "none",
+        scope: this.config.scope,
       }
     }
 
@@ -119,6 +121,7 @@ export class McpOAuthProvider implements OAuthClientProvider {
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
       token_endpoint_auth_method: this.config.clientSecret ? "client_secret_post" : "none",
+      scope: this.config.scope,
     }
   }
 
@@ -208,6 +211,19 @@ export class McpOAuthProvider implements OAuthClientProvider {
    * falls through from a failed refresh into a fresh authorization_code
    * flow, which library hosts cannot complete in-process.
    */
+  async validateResourceURL(serverUrl: string | URL): Promise<URL | undefined> {
+    if (!this.config.resource) {
+      return undefined
+    }
+
+    const requested = typeof serverUrl === "string" ? new URL(serverUrl) : new URL(serverUrl.href)
+    const configured = new URL(this.config.resource)
+    if (requested.origin !== configured.origin) {
+      throw new Error(`Configured OAuth resource ${configured.href} does not match MCP server ${requested.href}`)
+    }
+    return configured
+  }
+
   async redirectToAuthorization(authorizationUrl: URL): Promise<void> {
     if (this.usesClientCredentials) {
       throw new Error("redirectToAuthorization is not used for client_credentials flow")

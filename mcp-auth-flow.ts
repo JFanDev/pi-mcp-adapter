@@ -60,6 +60,7 @@ function extractOAuthConfig(definition: ServerEntry): McpOAuthConfig {
     clientId: definition.oauth?.clientId,
     clientSecret: definition.oauth?.clientSecret,
     scope: definition.oauth?.scope,
+    resource: definition.oauth?.resource,
     callbackPort: definition.oauth?.callbackPort,
   }
 }
@@ -81,7 +82,10 @@ export async function startAuth(
         throw new Error("Browser redirect is not used for client_credentials flow")
       },
     })
-    const result = await runSdkAuth(authProvider, { serverUrl })
+    const result = await runSdkAuth(authProvider, {
+      serverUrl,
+      scope: config.scope,
+    })
     if (result !== "AUTHORIZED") {
       throw new UnauthorizedError("Failed to authorize")
     }
@@ -106,7 +110,10 @@ export async function startAuth(
   })
 
   try {
-    const result = await runSdkAuth(authProvider, { serverUrl })
+    const result = await runSdkAuth(authProvider, {
+      serverUrl,
+      scope: config.scope,
+    })
     if (result === "AUTHORIZED") {
       await clearOAuthState(serverName)
       return { authorizationUrl: "" }

@@ -73,6 +73,7 @@ You can optionally provide a pre-registered client:
 - `oauth.clientId` - Pre-registered client ID (optional, SDK tries dynamic registration if not provided)
 - `oauth.clientSecret` - Client secret for confidential clients (optional)
 - `oauth.scope` - Requested OAuth scopes (optional)
+- `oauth.resource` - RFC 8707 resource indicator to request for servers that require a specific audience (optional)
 
 ### Non-Interactive `client_credentials`
 
