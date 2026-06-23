@@ -47,7 +47,7 @@ describe("McpOAuthProvider", () => {
     redirectCaptured = undefined
   })
 
-  function createProvider(config: { clientId?: string; clientSecret?: string; scope?: string } = {}) {
+  function createProvider(config: { clientId?: string; clientSecret?: string; scope?: string; resource?: string } = {}) {
     return new McpOAuthProvider(serverName, serverUrl, config, {
       onRedirect: async (url) => {
         redirectCaptured = url
@@ -83,6 +83,36 @@ describe("McpOAuthProvider", () => {
       const metadata = provider.clientMetadata
 
       assert.strictEqual(metadata.token_endpoint_auth_method, "client_secret_post")
+    })
+
+    it("should include configured scope in metadata", () => {
+      const provider = createProvider({ scope: "mcp:employee:write" })
+      const metadata = provider.clientMetadata
+
+      assert.strictEqual(metadata.scope, "mcp:employee:write")
+    })
+  })
+
+  describe("validateResourceURL", () => {
+    it("should return configured resource when origin matches server", async () => {
+      const provider = createProvider({
+        resource: "https://api.example.com/",
+      })
+
+      const resource = await provider.validateResourceURL!("https://api.example.com/mcp")
+
+      assert.strictEqual(resource?.href, "https://api.example.com/")
+    })
+
+    it("should reject configured resource for a different origin", async () => {
+      const provider = createProvider({
+        resource: "https://other.example.com/",
+      })
+
+      await assert.rejects(
+        async () => provider.validateResourceURL!("https://api.example.com/mcp"),
+        /does not match MCP server/,
+      )
     })
   })
 

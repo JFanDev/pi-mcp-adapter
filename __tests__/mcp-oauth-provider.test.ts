@@ -25,6 +25,34 @@ describe("McpOAuthProvider authorization fallback", () => {
     }
   });
 
+  it("includes configured scope in client metadata", () => {
+    const provider = new McpOAuthProvider("scoped", serverUrl, { scope: "mcp:employee:write" }, { onRedirect: async () => {} });
+
+    expect(provider.clientMetadata.scope).toBe("mcp:employee:write");
+  });
+
+  it("uses configured resource when its origin matches the server", async () => {
+    const provider = new McpOAuthProvider(
+      "resource-match",
+      serverUrl,
+      { resource: "https://api.example.com/" },
+      { onRedirect: async () => {} },
+    );
+
+    await expect(provider.validateResourceURL!(serverUrl)).resolves.toEqual(new URL("https://api.example.com/"));
+  });
+
+  it("rejects configured resource from a different origin", async () => {
+    const provider = new McpOAuthProvider(
+      "resource-mismatch",
+      serverUrl,
+      { resource: "https://other.example.com/" },
+      { onRedirect: async () => {} },
+    );
+
+    await expect(provider.validateResourceURL!(serverUrl)).rejects.toThrow(/does not match MCP server/);
+  });
+
   it("throws UnauthorizedError when state is requested outside a user-initiated flow", async () => {
     const provider = new McpOAuthProvider("state-missing", serverUrl, {}, { onRedirect: async () => {} });
 
